@@ -1,3 +1,8 @@
+body {
+  padding: 0;
+  margin: 0;
+}
+
 #simulation-canvas {
   display: block;
   cursor: crosshair;
@@ -9,8 +14,8 @@
   user-select: none;
   margin: 0;
   padding: 0;
-  width: 256px;
-  height: 256px;
+  width: 32px;
+  height: 32px;
   outline: 0;
   border: 1px red solid;
 }

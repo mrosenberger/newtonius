@@ -53,13 +53,14 @@ Complex.prototype.toString = function() {
 
 var NewtonFractalRenderer = function(width, height) {
   this.zeroes = [];
+  this.zeroes_colors = [];
   this.canvasWidth = width;
   this.canvasHeight = height;
   this.viewport = {
     left: -1,
-    right: 1,
-    bottom: 1,
-    top: -1
+    right: 2,
+    bottom: -3,
+    top: 4
   };
 };
 
@@ -69,13 +70,14 @@ NewtonFractalRenderer.prototype.fromCanvasToPlane = function(x, y) {
   return new Complex(plane_x, plane_y);
 };
 
-NewtonFractalRenderer.prototype.addZero = function(c) {
-  this.zeroes.push(c);
+NewtonFractalRenderer.prototype.addZero = function(zero, color) {
+  this.zeroes.push(zero);
+  this.zeroes_colors.push(color);
 };
 
-NewtonFractalRenderer.prototype.initHandlers = function() {
+NewtonFractalRenderer.prototype.initHandlers = function(element) {
   var currentThis = this;
-  $("#simulation-canvas").click(function(e) {
+  element.click(function(e) {
     var in_plane = currentThis.fromCanvasToPlane(e.clientX, e.clientY);
     console.log("Adding zero: " + in_plane.toString());
     currentThis.addZero(in_plane);
@@ -110,30 +112,57 @@ NewtonFractalRenderer.prototype.iterateOnce = function(z) {
   return z.subtract(this.function_p(z).divide(this.function_p_prime(z)));
 };
 
-NewtonFractalRenderer.prototype.nearestZero = function(z) {
-  return _.min(this.zeroes, function(zero) {
-    return z.subtract(zero).relativeMagnitude();
-  });
+NewtonFractalRenderer.prototype.iterate = function(z, iterations) {
+  console.log("Beginning iteration of '" + z.toString() + "'...");
+  for (var i=0; i < iterations; i++) {
+    z = this.iterateOnce(z);
+    console.log(z.toString());
+  }
+  return z;
 };
 
-NewtonFractalRenderer.prototype.redraw = function(iterations) {
+NewtonFractalRenderer.prototype.nearestZero = function(z) {
+  if (this.zeroes.length == 0) return {color: "black", zero: new Complex(0, 0)};
+  var min_distance = 1000000000;
+  var min_index = -1;
+  for (var i=0; i < this.zeroes.length; i++) {
+    var current = this.zeroes[i];
+    var rm = z.subtract(current).relativeMagnitude();
+    if (rm <= min_distance) {
+      min_distance = rm;
+      min_index = i;
+    }
+  }
+  return {color: this.zeroes_colors[min_index], zero: this.zeroes[min_index]};
+};
+
+NewtonFractalRenderer.prototype.redraw = function(context, iterations) {
   var dx = (this.viewport.right - this.viewport.left) / this.canvasWidth;
   var dy = (this.viewport.bottom - this.viewport.top) / this.canvasHeight;
   for (var pix_x=0; pix_x < this.canvasWidth; pix_x++) {
     for (var pix_y=0; pix_y < this.canvasHeight; pix_y++) {
-      var pos_x = dx * pix_x;
-      var pos_y = dy * pix_y;
+      console.log(pix_x + ", " + pix_y);
+      var pos_x = dx * pix_x + this.viewport.left;
+      var pos_y = this.viewport.bottom - dy * pix_y;
       var z = new Complex(pos_x, pos_y);
-      
+      console.log(z.toString());
+      //z = this.iterate(z, iterations);
+      //var nearest = this.nearestZero(z);
+      //console.log("Nearest zero: " + nearest.zero.toString());
+      //console.log("Nearest color: " + nearest.color.toString());
+      //context.fillStyle = nearest.color;
+      //context.fillRect(pix_x, pix_y, pix_x+1, pix_y+1);
     }
   }
 };
 
-var nfr = new NewtonFractalRenderer(256, 256);
-nfr.initHandlers();
-nfr.addZero(new Complex(-1, 0));
-nfr.addZero(new Complex(0, 0));
-nfr.addZero(new Complex(1, 0));
+var nfr = new NewtonFractalRenderer(32, 32);
 
-console.log(nfr.function_p_prime(new Complex(0.5, 0)).toString());
-console.log(nfr.function_p_prime(new Complex(2, 0)).toString());
+nfr.addZero(new Complex(-1, 0), "red");
+nfr.addZero(new Complex(1, 0), "green");
+
+var canvas_element = $("#simulation-canvas");
+nfr.initHandlers(canvas_element);
+
+var context = canvas_element[0].getContext("2d");
+nfr.redraw(context, 10);
