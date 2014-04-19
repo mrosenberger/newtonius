@@ -14,7 +14,11 @@ Complex.prototype.subtract = function(other) {
 };
 
 Complex.prototype.magnitude = function() {
-  return Math.sqrt(Math.pow(this.re, 2.0) + Math.pow(this.im, 2.0));
+  return Math.sqrt(this.re * this.re + this.im * this.im);
+};
+
+Complex.prototype.relativeMagnitude = function() {
+  return this.re * this.re + this.im + this.im;
 };
 
 Complex.prototype.scale = function(scalar) {
@@ -28,6 +32,17 @@ Complex.prototype.normalize = function() {
 
 Complex.prototype.multiply = function(other) {
   return new Complex(this.re * other.re - this.im * other.im, this.re * other.im + this.im * other.re);
+};
+
+Complex.prototype.conjugate = function() {
+  return new Complex(this.re, -this.im);
+};
+
+Complex.prototype.divide = function(other) {
+  var divisor = other.magnitude();
+  var real_part = (this.re * other.re + this.im * other.im) / divisor;
+  var imaginary_part = (-this.re * other.im + this.im * other.re) / divisor;
+  return new Complex(real_part, imaginary_part);
 };
 
 Complex.prototype.toString = function() {
@@ -89,6 +104,29 @@ NewtonFractalRenderer.prototype.function_p_prime = function(z) {
     mult_accum = new Complex(1, 0);
   }
   return add_accum;
+};
+
+NewtonFractalRenderer.prototype.iterateOnce = function(z) {
+  return z.subtract(this.function_p(z).divide(this.function_p_prime(z)));
+};
+
+NewtonFractalRenderer.prototype.nearestZero = function(z) {
+  return _.min(this.zeroes, function(zero) {
+    return z.subtract(zero).relativeMagnitude();
+  });
+};
+
+NewtonFractalRenderer.prototype.redraw = function(iterations) {
+  var dx = (this.viewport.right - this.viewport.left) / this.canvasWidth;
+  var dy = (this.viewport.bottom - this.viewport.top) / this.canvasHeight;
+  for (var pix_x=0; pix_x < this.canvasWidth; pix_x++) {
+    for (var pix_y=0; pix_y < this.canvasHeight; pix_y++) {
+      var pos_x = dx * pix_x;
+      var pos_y = dy * pix_y;
+      var z = new Complex(pos_x, pos_y);
+      
+    }
+  }
 };
 
 var nfr = new NewtonFractalRenderer(256, 256);
