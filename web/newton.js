@@ -207,7 +207,7 @@ var iterations = 15;
 
 var nfr = new NewtonFractalRenderer(canvas_element.width(), canvas_element.height());
 
-nfr.addZero(new Complex(1.0, 0.0), "red");
+nfr.addZero(new Complex(1.0, 0.0), "black");
 nfr.addZero(new Complex(-0.5, 0.5), "blue");
 nfr.addZero(new Complex(-0.5, -0.5), "green");
 
