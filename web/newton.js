@@ -62,9 +62,40 @@ NewtonFractalRenderer.prototype.initHandlers = function() {
   var currentThis = this;
   $("#simulation-canvas").click(function(e) {
     var in_plane = currentThis.fromCanvasToPlane(e.clientX, e.clientY);
-    console.log(in_plane.toString());
+    console.log("Adding zero: " + in_plane.toString());
+    currentThis.addZero(in_plane);
+    console.log("Now have " + currentThis.zeroes.length + " zeroes.");
   });
+};
+
+NewtonFractalRenderer.prototype.function_p = function(z) {
+  var accum = new Complex(1, 0);
+  _.each(this.zeroes, function(zero) {
+    accum = accum.multiply(z.subtract(zero));
+  });
+  return accum;
+};
+
+NewtonFractalRenderer.prototype.function_p_prime = function(z) {
+  var mult_accum = new Complex(1, 0);
+  var add_accum = new Complex(0, 0);
+  for (var i=0; i < this.zeroes.length; i++) {
+    for (var j=0; j < this.zeroes.length; j++) {
+      if (i != j) {
+        mult_accum = mult_accum.multiply(z.subtract(this.zeroes[j]));
+      }
+    }
+    add_accum = add_accum.add(mult_accum);
+    mult_accum = new Complex(1, 0);
+  }
+  return add_accum;
 };
 
 var nfr = new NewtonFractalRenderer(256, 256);
 nfr.initHandlers();
+nfr.addZero(new Complex(-1, 0));
+nfr.addZero(new Complex(0, 0));
+nfr.addZero(new Complex(1, 0));
+
+console.log(nfr.function_p_prime(new Complex(0.5, 0)).toString());
+console.log(nfr.function_p_prime(new Complex(2, 0)).toString());
