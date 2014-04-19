@@ -4,18 +4,6 @@ body {
 }
 
 #simulation-canvas {
-  display: block;
-  cursor: crosshair;
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  -khtml-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
   margin: 0;
   padding: 0;
-  width: 32px;
-  height: 32px;
-  outline: 0;
-  border: 1px red solid;
 }

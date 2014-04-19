@@ -39,7 +39,7 @@ Complex.prototype.conjugate = function() {
 };
 
 Complex.prototype.divide = function(other) {
-  var divisor = other.magnitude();
+  var divisor = other.re * other.re + other.im * other.im;
   var real_part = (this.re * other.re + this.im * other.im) / divisor;
   var imaginary_part = (-this.re * other.im + this.im * other.re) / divisor;
   return new Complex(real_part, imaginary_part);
@@ -47,7 +47,7 @@ Complex.prototype.divide = function(other) {
 
 Complex.prototype.toString = function() {
   return this.re + (this.im >= 0 ? " + " : " -") + Math.abs(this.im) + "i";
-}
+};
 
 // Newton crap
 
@@ -58,9 +58,9 @@ var NewtonFractalRenderer = function(width, height) {
   this.canvasHeight = height;
   this.viewport = {
     left: -1,
-    right: 2,
-    bottom: -3,
-    top: 4
+    right: 1,
+    bottom: -1,
+    top: 1
   };
 };
 
@@ -75,14 +75,38 @@ NewtonFractalRenderer.prototype.addZero = function(zero, color) {
   this.zeroes_colors.push(color);
 };
 
-NewtonFractalRenderer.prototype.initHandlers = function(element) {
-  var currentThis = this;
-  element.click(function(e) {
-    var in_plane = currentThis.fromCanvasToPlane(e.clientX, e.clientY);
+NewtonFractalRenderer.prototype.initHandlers = function(element, context, iterations) {
+  var that = this;
+  /*element.click(function(e) {
+    var in_plane = that.fromCanvasToPlane(e.clientX, e.clientY);
     console.log("Adding zero: " + in_plane.toString());
-    currentThis.addZero(in_plane);
-    console.log("Now have " + currentThis.zeroes.length + " zeroes.");
-  });
+    that.addZero(in_plane, that.getRandomColor());
+    console.log("Now have " + that.zeroes.length + " zeroes.");
+    that.redraw(context, iterations);
+  });*/
+  var amount = 1;
+  $(element).keypress(function(e) {
+    var val = e.which;
+    switch (val) {
+      case 119:
+        that.viewport.top += amount;
+        that.viewport.bottom += amount;
+        break;
+      case 97:
+        that.viewport.left -= amount;
+        that.viewport.right -= amount;
+        break;
+      case 100:
+        that.viewport.left += amount;
+        that.viewport.right += amount;
+        break;
+      case 115:
+        that.viewport.top -= amount;
+        that.viewport.bottom -= amount;
+        break;
+    }
+    that.redraw(context, iterations);
+});
 };
 
 NewtonFractalRenderer.prototype.function_p = function(z) {
@@ -109,21 +133,30 @@ NewtonFractalRenderer.prototype.function_p_prime = function(z) {
 };
 
 NewtonFractalRenderer.prototype.iterateOnce = function(z) {
-  return z.subtract(this.function_p(z).divide(this.function_p_prime(z)));
+  var p_val = this.function_p(z);
+  var p_prime_val = this.function_p_prime(z);
+  var divided = p_val.divide(p_prime_val);
+  var subtracted = z.subtract(divided);
+  //console.log("P val: " + p_val.toString());
+  //console.log("P prime: " + p_prime_val.toString());
+  //console.log("Divided: " + divided.toString());
+  //console.log("Subtracted: " + subtracted.toString());
+  return subtracted;
+  //return z.subtract(this.function_p(z).divide(this.function_p_prime(z)));
 };
 
 NewtonFractalRenderer.prototype.iterate = function(z, iterations) {
-  console.log("Beginning iteration of '" + z.toString() + "'...");
+  //console.log("Beginning iteration of '" + z.toString() + "'...");
   for (var i=0; i < iterations; i++) {
     z = this.iterateOnce(z);
-    console.log(z.toString());
+    //console.log(z.toString());
   }
   return z;
 };
 
 NewtonFractalRenderer.prototype.nearestZero = function(z) {
   if (this.zeroes.length == 0) return {color: "black", zero: new Complex(0, 0)};
-  var min_distance = 1000000000;
+  var min_distance = 1000000000.0;
   var min_index = -1;
   for (var i=0; i < this.zeroes.length; i++) {
     var current = this.zeroes[i];
@@ -138,31 +171,49 @@ NewtonFractalRenderer.prototype.nearestZero = function(z) {
 
 NewtonFractalRenderer.prototype.redraw = function(context, iterations) {
   var dx = (this.viewport.right - this.viewport.left) / this.canvasWidth;
-  var dy = (this.viewport.bottom - this.viewport.top) / this.canvasHeight;
+  var dy = (this.viewport.top - this.viewport.bottom) / this.canvasHeight;
   for (var pix_x=0; pix_x < this.canvasWidth; pix_x++) {
+    //console.log(pix_x);
     for (var pix_y=0; pix_y < this.canvasHeight; pix_y++) {
-      console.log(pix_x + ", " + pix_y);
+      //console.log("===================================================");
+      //console.log("Pixel pos: " + pix_x + ", " + pix_y);
       var pos_x = dx * pix_x + this.viewport.left;
       var pos_y = this.viewport.bottom - dy * pix_y;
       var z = new Complex(pos_x, pos_y);
-      console.log(z.toString());
-      //z = this.iterate(z, iterations);
-      //var nearest = this.nearestZero(z);
+      //console.log("Point: " + z.toString());
+      z = this.iterate(z, iterations);
+      var nearest = this.nearestZero(z);
       //console.log("Nearest zero: " + nearest.zero.toString());
       //console.log("Nearest color: " + nearest.color.toString());
-      //context.fillStyle = nearest.color;
-      //context.fillRect(pix_x, pix_y, pix_x+1, pix_y+1);
+      context.fillStyle = nearest.color;
+      context.fillRect(pix_x, pix_y, 1, 1);
+      //console.log(context.fillStyle);
     }
   }
 };
 
-var nfr = new NewtonFractalRenderer(32, 32);
-
-nfr.addZero(new Complex(-1, 0), "red");
-nfr.addZero(new Complex(1, 0), "green");
+NewtonFractalRenderer.prototype.getRandomColor = function() {
+  var letters = "0123456789ABCDEF".split("");
+  var color = "#";
+  for (var i = 0; i < 6; i++ ) {
+      color += letters[Math.round(Math.random() * 15)];
+  }
+  return color;
+};
 
 var canvas_element = $("#simulation-canvas");
-nfr.initHandlers(canvas_element);
-
 var context = canvas_element[0].getContext("2d");
-nfr.redraw(context, 10);
+var iterations = 15;
+
+var nfr = new NewtonFractalRenderer(canvas_element.width(), canvas_element.height());
+
+nfr.addZero(new Complex(1.0, 0.0), "red");
+nfr.addZero(new Complex(-0.5, 0.5), "blue");
+nfr.addZero(new Complex(-0.5, -0.5), "green");
+
+nfr.initHandlers(canvas_element, context, iterations);
+
+nfr.redraw(context, iterations);
+
+//console.log("iterating.......");
+//console.log(nfr.iterateOnce(new Complex(2, 0)).toString());
