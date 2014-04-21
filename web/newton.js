@@ -84,25 +84,43 @@ NewtonFractalRenderer.prototype.initHandlers = function(element, context, iterat
     console.log("Now have " + that.zeroes.length + " zeroes.");
     that.redraw(context, iterations);
   });*/
-  var amount = 1;
   $(element).keypress(function(e) {
-    var val = e.which;
-    switch (val) {
-      case 119:
+    var dist_x = that.viewport.right - that.viewport.left;
+    var amount = dist_x / 10.0;
+    var key = String.fromCharCode(e.which);
+    console.log(key);
+    switch (key) {
+      case "w":
         that.viewport.top += amount;
         that.viewport.bottom += amount;
         break;
-      case 97:
+      case "a":
         that.viewport.left -= amount;
         that.viewport.right -= amount;
         break;
-      case 100:
+      case "d":
         that.viewport.left += amount;
         that.viewport.right += amount;
         break;
-      case 115:
+      case "s":
         that.viewport.top -= amount;
         that.viewport.bottom -= amount;
+        break;
+      case "+":
+        /*that.viewport.top *= zoomAmount;
+        that.viewport.bottom *= zoomAmount;
+        that.viewport.left *= zoomAmount;
+        that.viewport.right *= zoomAmount;*/
+        var center_x = (that.viewport.left + that.viewport.right) / 2.0;
+        var center_y = (that.viewport.top + that.viewport.bottom) / 2.0;
+        that.viewport.left = (that.viewport.left + center_x) / 2.0;
+        that.viewport.right = (that.viewport.right + center_x) / 2.0;
+        that.viewport.top = (that.viewport.top + center_y) / 2.0;
+        that.viewport.bottom = (that.viewport.bottom + center_y) / 2.0;
+        console.log("top: " + that.viewport.top)
+        console.log("bottom: " + that.viewport.bottom);
+        console.log("left: " + that.viewport.left);
+        console.log("right: " + that.viewport.right);
         break;
     }
     that.redraw(context, iterations);
@@ -178,7 +196,8 @@ NewtonFractalRenderer.prototype.redraw = function(context, iterations) {
       //console.log("===================================================");
       //console.log("Pixel pos: " + pix_x + ", " + pix_y);
       var pos_x = dx * pix_x + this.viewport.left;
-      var pos_y = this.viewport.bottom - dy * pix_y;
+      //var pos_y = this.viewport.bottom - dy * pix_y;
+      var pos_y = dy * pix_y + this.viewport.bottom;
       var z = new Complex(pos_x, pos_y);
       //console.log("Point: " + z.toString());
       z = this.iterate(z, iterations);
@@ -186,7 +205,7 @@ NewtonFractalRenderer.prototype.redraw = function(context, iterations) {
       //console.log("Nearest zero: " + nearest.zero.toString());
       //console.log("Nearest color: " + nearest.color.toString());
       context.fillStyle = nearest.color;
-      context.fillRect(pix_x, pix_y, 1, 1);
+      context.fillRect(pix_x, this.canvasHeight - pix_y, 1, 1);
       //console.log(context.fillStyle);
     }
   }
@@ -207,7 +226,11 @@ var iterations = 15;
 
 var nfr = new NewtonFractalRenderer(canvas_element.width(), canvas_element.height());
 
-nfr.addZero(new Complex(1.0, 0.0), "black");
+/*nfr.addZero(new Complex(1.0, 0.0), "black");
+nfr.addZero(new Complex(-0.5, 0.5), "blue");
+nfr.addZero(new Complex(-0.5, -0.5), "green");*/
+
+nfr.addZero(new Complex(2.0, 0.0), "black");
 nfr.addZero(new Complex(-0.5, 0.5), "blue");
 nfr.addZero(new Complex(-0.5, -0.5), "green");
 
