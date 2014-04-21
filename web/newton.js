@@ -84,13 +84,13 @@ NewtonFractalRenderer.prototype.initHandlers = function(element) {
     console.log("Adding zero: " + in_plane.toString());
     that.addZero(in_plane, that.getRandomColor());
     console.log("Now have " + that.zeroes.length + " zeroes.");
-    that.redraw(context, iterations);
+    that.redraw();
   });*/
-  $(element).keypress(function(e) {
+  element.keypress(function(e) {
     var dist_x = that.viewport.right - that.viewport.left;
     var amount = dist_x / 10.0;
+    var zoomAmount = 1.5;
     var key = String.fromCharCode(e.which);
-    console.log(key);
     switch (key) {
       case "w":
         that.viewport.top += amount;
@@ -111,13 +111,12 @@ NewtonFractalRenderer.prototype.initHandlers = function(element) {
       case "+":
         var center_x = (that.viewport.left + that.viewport.right) / 2.0;
         var center_y = (that.viewport.top + that.viewport.bottom) / 2.0;
-        that.viewport.left = (that.viewport.left + center_x) / 2.0;
-        that.viewport.right = (that.viewport.right + center_x) / 2.0;
-        that.viewport.top = (that.viewport.top + center_y) / 2.0;
-        that.viewport.bottom = (that.viewport.bottom + center_y) / 2.0;
+        that.viewport.left = center_x - (center_x - that.viewport.left) / zoomAmount;
+        that.viewport.right = center_x + (that.viewport.right - center_x) / zoomAmount;
+        that.viewport.bottom = center_y - (center_y - that.viewport.bottom) / zoomAmount;
+        that.viewport.top = center_y + (that.viewport.top - center_y) / zoomAmount;
         break;
       case "-":
-        var zoomAmount = 1.5;
         var center_x = (that.viewport.left + that.viewport.right) / 2.0;
         var center_y = (that.viewport.top + that.viewport.bottom) / 2.0;
         that.viewport.left = center_x - (center_x - that.viewport.left) * zoomAmount;
@@ -238,12 +237,48 @@ var nfr = new NewtonFractalRenderer(canvas_element.width(), canvas_element.heigh
 nfr.addZero(new Complex(-0.5, 0.5), "blue");
 nfr.addZero(new Complex(-0.5, -0.5), "green");*/
 
-nfr.addZero(new Complex(2.0, 0.0), "black");
-nfr.addZero(new Complex(-0.5, 0.5), "blue");
-nfr.addZero(new Complex(-0.5, -0.5), "green");
+//nfr.addZero(new Complex(2.0, 0.0), "black");
+
+function nthRoots(renderer, n, r) {
+  var slice = Math.PI * 2.0 / n;
+  for (var i=0; i < n; i++) {
+    var arg = slice * i;
+    var x = Math.cos(arg) * r;
+    var y = Math.sin(arg) * r;
+    renderer.addZero(new Complex(x, y), renderer.getRandomColor());
+  }
+};
+
+//nfr.addZero(new Complex(-0.5, 0.5), "blue");
+//nfr.addZero(new Complex(-0.5, -0.5), "brown");
+//nfr.addZero(new Complex(0.5, 0.5), "green");
+//nfr.addZero(new Complex(0.5, -0.5), "orange");
+
+nthRoots(nfr, 8, 1);
 
 nfr.initHandlers(canvas_element);
 nfr.redraw();
+
+canvas_element.focus();
+
+$(document).bind("keypress", function(e) {
+  var key = String.fromCharCode(e.which);
+  if (key == "r") {
+    var hires_canvas = $("#simulation-canvas-hires");
+    var hires_context = hires_canvas[0].getContext("2d");
+    var hires_nfr = new NewtonFractalRenderer(hires_canvas.width(), hires_canvas.height(), hires_context, nfr.iterations);
+    hires_context.font = "8px Georgia";
+    hires_context.fillStyle = "black";
+    hires_context.fillText("Redrawing...", 10, 10);
+    hires_nfr.zeroes = nfr.zeroes;
+    hires_nfr.zeroes_colors = nfr.zeroes_colors;
+    hires_nfr.viewport = nfr.viewport;
+    window.setTimeout(function() {
+      hires_nfr.redraw();
+      hires_nfr.initHandlers(hires_canvas);
+    }, 0);
+  }
+});
 
 //console.log("iterating.......");
 //console.log(nfr.iterateOnce(new Complex(2, 0)).toString());
